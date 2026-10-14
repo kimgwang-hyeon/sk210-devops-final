@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sk210-final-api
+  labels:
+    app.kubernetes.io/name: sk210-final-api
+    app.kubernetes.io/instance: sk210-final-api
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: sk210-final-api
+    app.kubernetes.io/instance: sk210-final-api
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

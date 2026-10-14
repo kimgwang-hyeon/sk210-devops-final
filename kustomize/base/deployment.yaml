@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sk210-final-api
+  labels:
+    app.kubernetes.io/name: sk210-final-api
+    app.kubernetes.io/instance: sk210-final-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: sk210-final-api
+      app.kubernetes.io/instance: sk210-final-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: sk210-final-api
+        app.kubernetes.io/instance: sk210-final-api
+    spec:
+      imagePullSecrets:
+        - name: harbor-registry-secret
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+      containers:
+        - name: api
+          image: skala-registry.skala-ai.com/class-7/sk210-final-api:bootstrap
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: USER_NAME
+              value: sk210
+            - name: SKALA_INFO
+              value: Jenkins BuildKit and ArgoCD capstone
+          resources:
+            requests:
+              cpu: 100m
+              memory: 96Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          startupProbe:
+            httpGet:
+              path: /python/health/liveness
+              port: http
+            periodSeconds: 2
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /python/health/liveness
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 2
+          readinessProbe:
+            httpGet:
+              path: /python/health/readiness
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 2
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
