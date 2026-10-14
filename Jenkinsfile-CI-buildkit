@@ -21,7 +21,7 @@ pipeline {
     GIT_CREDENTIAL_ID = 'sk210-github-id'
     REGISTRY_CREDENTIAL_ID = 'skala-image-registry-id'
     REGISTRY_HOST = 'skala-registry.skala-ai.com'
-    IMAGE_REPOSITORY = 'skala-registry.skala-ai.com/class-7/sk210-final-api'
+    IMAGE_REPOSITORY = 'skala-registry.skala-ai.com/class-7/sk210-webserver'
   }
 
   stages {
@@ -33,7 +33,7 @@ pipeline {
             credentialsId: env.GIT_CREDENTIAL_ID,
             url: env.GIT_URL
           env.SOURCE_REVISION = checkoutInfo.GIT_COMMIT
-          env.IMAGE_TAG = "build-${env.BUILD_NUMBER}-${env.SOURCE_REVISION.take(12)}"
+          env.IMAGE_TAG = "final-build-${env.BUILD_NUMBER}-${env.SOURCE_REVISION.take(12)}"
           env.TEST_IMAGE = "sk210-final-api-test:${env.IMAGE_TAG}"
         }
       }

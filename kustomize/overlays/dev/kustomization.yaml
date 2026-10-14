@@ -5,5 +5,5 @@ resources:
   - ../../base
   - ingress.yaml
 images:
-  - name: skala-registry.skala-ai.com/class-7/sk210-final-api
-    newTag: bootstrap
+  - name: skala-registry.skala-ai.com/class-7/sk210-webserver
+    newTag: final-bootstrap

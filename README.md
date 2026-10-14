@@ -10,13 +10,14 @@
 |---|---|
 | Git 저장소 | `https://github.com/kimgwang-hyeon/sk210-devops-final` |
 | 소스 / 배포 브랜치 | `main` / `gitops` |
-| 이미지 | `skala-registry.skala-ai.com/class-7/sk210-final-api` |
+| 이미지 | `skala-registry.skala-ai.com/class-7/sk210-webserver` |
+| 종합 실습 이미지 태그 | `final-build-<빌드번호>-<소스커밋 앞 12자리>` |
 | 네임스페이스 | `class-7` |
 | Deployment·Service·Ingress·ArgoCD Application | `sk210-final-api` |
 | 서비스 주소 | `https://sk210-final.class-7.skala-ai.com` |
 | ArgoCD 프로젝트 / 경로 | `class-7` / `kustomize/overlays/dev` |
 
-`bootstrap`은 배포 전 표시값입니다. 최초 CI가 실제 이미지 태그로 바꾼 `gitops` 브랜치를 생성한 뒤 ArgoCD Application을 등록합니다. `main`의 표시값을 직접 배포하지 않습니다.
+`final-bootstrap`은 배포 전 표시값입니다. 최초 CI가 실제 이미지 태그로 바꾼 `gitops` 브랜치를 생성한 뒤 ArgoCD Application을 등록합니다. 기존 `sk210-webserver` 이미지 저장소를 사용하며, 모든 종합 실습 태그는 `final-` 접두사로 구분합니다. `main`의 표시값을 직접 배포하지 않습니다.
 
 ## 로컬 실행과 검사
 

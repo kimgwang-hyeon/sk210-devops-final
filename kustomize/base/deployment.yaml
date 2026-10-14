@@ -25,7 +25,7 @@ spec:
         runAsGroup: 10001
       containers:
         - name: api
-          image: skala-registry.skala-ai.com/class-7/sk210-final-api:bootstrap
+          image: skala-registry.skala-ai.com/class-7/sk210-webserver:final-bootstrap
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
