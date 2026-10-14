@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sk210-final-api
+  labels:
+    app.kubernetes.io/name: sk210-final-api
+    app.kubernetes.io/instance: sk210-final-api
+spec:
+  ingressClassName: public-nginx
+  tls:
+    - secretName: wildcard-class-7-skala-ai-com-tls
+      hosts:
+        - sk210-final.class-7.skala-ai.com
+  rules:
+    - host: sk210-final.class-7.skala-ai.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: sk210-final-api
+                port:
+                  number: 8080

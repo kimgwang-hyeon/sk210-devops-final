@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sk210-final-api
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: sk210-final-api
+spec:
+  project: class-7
+  source:
+    repoURL: https://github.com/kimgwang-hyeon/sk210-devops-final.git
+    targetRevision: gitops
+    path: kustomize/overlays/dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: class-7
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

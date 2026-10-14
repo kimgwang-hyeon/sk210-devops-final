@@ -1,0 +1,142 @@
+pipeline {
+  agent any
+
+  options {
+    skipDefaultCheckout(true)
+    disableConcurrentBuilds()
+    timestamps()
+    timeout(time: 25, unit: 'MINUTES')
+    buildDiscarder(logRotator(numToKeepStr: '10'))
+  }
+
+  triggers {
+    githubPush()
+  }
+
+  environment {
+    GIT_URL = 'https://github.com/kimgwang-hyeon/sk210-devops-final.git'
+    GIT_BRANCH = 'main'
+    GITOPS_BRANCH = 'gitops'
+    GIT_CREDENTIAL_ID = 'sk210-github-id'
+    REGISTRY_CREDENTIAL_ID = 'skala-image-registry-id'
+    REGISTRY_HOST = 'skala-registry.skala-ai.com'
+    IMAGE_REPOSITORY = 'skala-registry.skala-ai.com/class-7/sk210-final-api'
+  }
+
+  stages {
+    stage('Checkout main') {
+      steps {
+        deleteDir()
+        script {
+          def checkoutInfo = git branch: env.GIT_BRANCH,
+            credentialsId: env.GIT_CREDENTIAL_ID,
+            url: env.GIT_URL
+          env.SOURCE_REVISION = checkoutInfo.GIT_COMMIT
+          env.IMAGE_TAG = "build-${env.BUILD_NUMBER}-${env.SOURCE_REVISION.take(12)}"
+          env.TEST_IMAGE = "sk210-final-api-test:${env.IMAGE_TAG}"
+        }
+      }
+    }
+
+    stage('Test API') {
+      steps {
+        sh '''
+          set -eu
+          docker buildx build --target test --load --tag "$TEST_IMAGE" .
+        '''
+      }
+    }
+
+    stage('BuildKit build and push') {
+      steps {
+        withCredentials([usernamePassword(
+          credentialsId: env.REGISTRY_CREDENTIAL_ID,
+          usernameVariable: 'REGISTRY_USER',
+          passwordVariable: 'REGISTRY_PASSWORD'
+        )]) {
+          sh '''
+            set +x
+            set -eu
+            AUTH_DIR=$(mktemp -d)
+            trap 'rm -rf "$AUTH_DIR"' EXIT
+            export DOCKER_CONFIG="$AUTH_DIR"
+            printf '%s' "$REGISTRY_PASSWORD" | docker login "$REGISTRY_HOST" \
+              --username "$REGISTRY_USER" --password-stdin >/dev/null
+            docker buildx build --platform linux/amd64 --target runtime \
+              --build-arg APP_VERSION="$IMAGE_TAG" \
+              --build-arg SOURCE_REVISION="$SOURCE_REVISION" \
+              --tag "$IMAGE_REPOSITORY:$IMAGE_TAG" --push .
+          '''
+        }
+      }
+    }
+
+    stage('Publish GitOps desired state') {
+      steps {
+        withCredentials([usernamePassword(
+          credentialsId: env.GIT_CREDENTIAL_ID,
+          usernameVariable: 'GIT_USER',
+          passwordVariable: 'GIT_PASSWORD'
+        )]) {
+          sh '''
+            set +x
+            set -eu
+            AUTH_DIR=$(mktemp -d)
+            GITOPS_DIR=$(mktemp -d)
+            trap 'rm -rf "$AUTH_DIR" "$GITOPS_DIR"' EXIT
+
+            cat > "$AUTH_DIR/askpass" <<'ASKPASS'
+#!/bin/sh
+case "$1" in
+  *Username*) printf '%s\\n' "$GIT_USER" ;;
+  *Password*) printf '%s\\n' "$GIT_PASSWORD" ;;
+esac
+ASKPASS
+            chmod 700 "$AUTH_DIR/askpass"
+            export GIT_ASKPASS="$AUTH_DIR/askpass"
+            export GIT_TERMINAL_PROMPT=0
+            git -c credential.helper= clone --quiet --no-checkout "$GIT_URL" "$GITOPS_DIR"
+            cd "$GITOPS_DIR"
+            if git show-ref --verify --quiet "refs/remotes/origin/$GITOPS_BRANCH"; then
+              git checkout --quiet -B "$GITOPS_BRANCH" "origin/$GITOPS_BRANCH"
+            else
+              git checkout --quiet --orphan "$GITOPS_BRANCH"
+              git rm -rf --ignore-unmatch . >/dev/null
+            fi
+
+            git config --local user.name 'sk210 CI'
+            git config --local user.email 'kimgwang-hyeon@users.noreply.github.com'
+            rm -rf kustomize
+            cp -R "$WORKSPACE/kustomize" ./kustomize
+            cd kustomize/overlays/dev
+            kustomize edit set image "$IMAGE_REPOSITORY=$IMAGE_REPOSITORY:$IMAGE_TAG"
+            kustomize build . > "$WORKSPACE/rendered-gitops.yaml"
+            cd "$GITOPS_DIR"
+            git add -- kustomize
+            if ! git diff --cached --quiet; then
+              git commit --quiet -m "Deploy $IMAGE_TAG from $SOURCE_REVISION"
+              git -c credential.helper= push origin "HEAD:$GITOPS_BRANCH"
+            fi
+            GITOPS_REVISION=$(git rev-parse HEAD)
+            printf '{"image":"%s:%s","source_revision":"%s","gitops_revision":"%s"}\\n' \
+              "$IMAGE_REPOSITORY" "$IMAGE_TAG" "$SOURCE_REVISION" "$GITOPS_REVISION" \
+              > "$WORKSPACE/ci-result.json"
+          '''
+        }
+        archiveArtifacts artifacts: 'ci-result.json,rendered-gitops.yaml', fingerprint: true
+      }
+    }
+  }
+
+  post {
+    always {
+      sh '''
+        set +x
+        if [ -n "${TEST_IMAGE:-}" ]; then
+          docker image rm "$TEST_IMAGE" >/dev/null 2>&1 || true
+        fi
+      '''
+      deleteDir()
+    }
+  }
+}

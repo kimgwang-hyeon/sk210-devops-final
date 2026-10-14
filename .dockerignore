@@ -1,0 +1,14 @@
+.git
+.venv
+__pycache__
+**/__pycache__
+*.pyc
+.env
+.env.*
+.ci
+*.log
+.DS_Store
+Jenkinsfile*
+README.md
+argocd
+kustomize
