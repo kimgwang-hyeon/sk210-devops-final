@@ -305,7 +305,7 @@ def get_hostname():
 def version():
     return {
         "application": "sk210-final-api",
-        "message": "capstone v1",
+        "message": "capstone v2",
         "version": os.getenv("APP_VERSION", "local"),
         "source_revision": os.getenv("SOURCE_REVISION", "uncommitted"),
     }
