@@ -26,6 +26,7 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(result.status_code, 200)
         self.assertEqual(result.json(), {
             "application": "sk210-final-api",
+            "message": "capstone v1",
             "version": "build-7",
             "source_revision": "abc123",
         })

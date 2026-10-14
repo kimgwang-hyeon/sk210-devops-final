@@ -46,7 +46,7 @@ kubectl kustomize kustomize/overlays/dev
 3. Git credential은 Username with password 형식의 `sk210-github-id`입니다. PAT는 이 저장소의 **Contents 읽기·쓰기** 권한이 필요합니다.
 4. Harbor credential은 기존 `skala-image-registry-id`를 사용합니다.
 5. 최초 빌드를 실행하고 `ci-result.json`의 이미지 태그와 소스·GitOps 커밋을 확인합니다.
-6. GitHub에서 외부 접근 가능한 Jenkins의 `/github-webhook/` 주소를 등록하면 `main` push가 빌드를 시작합니다. 로컬 전용 Jenkins 주소는 GitHub에서 접근할 수 없으므로 수동 실행 또는 별도 공개 연결이 필요합니다.
+6. 로컬 Jenkins는 2분 간격으로 `main` 변경을 확인하여 빌드를 시작합니다. GitHub에서 접근할 수 있는 Jenkins라면 `/github-webhook/`도 사용할 수 있습니다. `gitops` 변경은 `main` 빌드를 다시 시작하지 않습니다.
 
 인증 정보는 Jenkins에서만 주입합니다. 로그의 shell tracing을 끈 상태에서 처리하며, Docker 설정과 Git 인증 도우미는 작업별 임시 디렉터리에 만들고 삭제합니다. 공유 Git 설정이나 다른 작업의 이미지를 변경하지 않습니다.
 
