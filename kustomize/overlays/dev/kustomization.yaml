@@ -5,6 +5,6 @@ resources:
 - ../../base
 - ingress.yaml
 images:
-- name: skala-registry.skala-ai.com/class-7/sk210-final-api
-  newName: skala-registry.skala-ai.com/class-7/sk210-final-api
-  newTag: build-1-56d4f1e0ae6a
+- name: skala-registry.skala-ai.com/class-7/sk210-webserver
+  newName: skala-registry.skala-ai.com/class-7/sk210-webserver
+  newTag: final-build-2-ed9952064f24
